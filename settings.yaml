@@ -1,0 +1,16 @@
+# settings.yaml
+
+# Path to file with files information
+file_info_path: "filelist.json"
+
+# Bee API endpoint
+bee_api_endpoint: ""
+
+# Stamp ID
+stamp_id: ""
+
+# Deferred upload (true or false)
+deferred_upload: false
+
+# Path to download location
+download_location_path: "./downloads"
