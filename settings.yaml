@@ -9,6 +9,8 @@ bee_api_endpoint: ""
 # Stamp ID
 stamp_id: ""
 
+upload_filter: "pending" # "all" or "pending"
+
 # Deferred upload (true or false)
 deferred_upload: false
 

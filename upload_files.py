@@ -57,7 +57,7 @@ def upload_file(file_info, settings):
 if __name__ == '__main__':
     successful_count = 0
     unsuccessful_count = 0
-    total_data_uploaded = 0
+    total_data_uploaded = 0  # In bytes
     
     parser = argparse.ArgumentParser(description='Upload files.')
     parser.add_argument('-S', '--settings', help='Path to settings YAML file', default='settings.yaml')
@@ -66,16 +66,23 @@ if __name__ == '__main__':
     settings = load_settings(args.settings)
     file_list = load_filelist(settings['file_info_path'])
 
-    for file_info in file_list:
-        upload_attempt = upload_file(file_info, settings)
-        file_info.setdefault('upload_attempt', []).append(upload_attempt)
+    upload_filter = settings.get('upload_filter', 'all')  # Default to 'all' if not specified
 
+    for file_info in file_list:
+        # Skip this file if we are uploading only 'pending' files and this file has a swarmHash
+        if upload_filter == 'pending' and 'swarmHash' in file_info:
+            continue
+
+        upload_attempt = upload_file(file_info, settings)
+        
         if "error" not in upload_attempt:
             successful_count += 1
             total_data_uploaded += file_info['size']
+            file_info.setdefault('upload_attempts', []).append(upload_attempt)  # Set default for 'upload_attempts' if not exists
         else:
             unsuccessful_count += 1
-
+            file_info.setdefault('upload_attempts', []).append(upload_attempt)  # Set default for 'upload_attempts' if not exists
+        
         save_filelist(file_list, settings['file_info_path'])
 
     total_data_uploaded_MB = total_data_uploaded / (1024 * 1024)
