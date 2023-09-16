@@ -28,7 +28,8 @@ def upload_file(file_info, settings):
     cmd.extend([
         '--stamp', settings['stamp_id'],
         '--deferred', str(settings['deferred_upload']).lower(),
-        '--curl'
+        '--curl',
+        '--yes'
     ])
     
     print(f"Working on file: {file_info['full_path']}")
