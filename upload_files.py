@@ -23,7 +23,7 @@ def upload_file(file_info, settings):
     cmd = ['swarm-cli', 'upload', file_info['full_path'], '--quiet']
     
     if settings.get('bee_api_endpoint'):
-        cmd.extend(['--bee-api-url', f'"{settings["bee_api_endpoint"]}"'])
+        cmd.extend(['--bee-api-url', settings['bee_api_endpoint']])
         
     cmd.extend([
         '--stamp', settings['stamp_id'],
