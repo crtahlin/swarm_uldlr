@@ -3,6 +3,10 @@
 # Path to file with files information
 file_info_path: "filelist.json"
 
+# Maximum file size to attempt to upload
+# max_file_size: 10485760  # Maximum file size in bytes (10MB in this example)
+max_file_size: 10000000000
+
 # Bee API endpoint
 bee_api_endpoint: ""
 

@@ -72,12 +72,18 @@ if __name__ == '__main__':
         file_list = load_filelist(settings['file_info_path'])
     
         upload_filter = settings.get('upload_filter', 'all')  # Default to 'all' if not specified
+        
+        # This would get the max_file_size setting from the YAML file
+        max_file_size = settings.get('max_file_size', float('inf'))  # Use a large number as the default
     
         for file_info in file_list:
             # Skip this file if we are uploading only 'pending' files and this file has a swarmHash
             if upload_filter == 'pending' and 'swarmHash' in file_info:
                 continue
-
+            if file_info['size'] > max_file_size:
+                print(f"Skipping {file_info['filename']} due to size exceeding max_file_size.")
+                continue
+        
             upload_attempt = upload_file(file_info, settings)
         
             if "error" not in upload_attempt:
