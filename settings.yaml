@@ -21,3 +21,17 @@ deferred_upload: false
 
 # Path to download location
 download_location_path: "./downloads"
+
+## HTML generation settings
+
+# Page title
+page_title: "My Swarm Files"
+
+# Page footer to include (optional)
+page_footer: "path/to/footer.txt"
+
+# Page styles to include (optional)
+page_css_styles: "path/to/styles.css"
+
+# Swarm gateway to use (full URL, reference hash concatenated)
+swarm_gateway: "https://some.swarm.gateway/"
