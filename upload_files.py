@@ -36,7 +36,7 @@ def upload_file(file_info, settings):
         '--yes'
     ])
     
-    print(f"Working on file: {file_info['full_path']}")
+    print(f"Working on file: {file_info['full_path']}  start: {timestamp_start}")
 
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -49,15 +49,15 @@ def upload_file(file_info, settings):
             swarm_hash = re.search(r'([a-fA-F0-9]{64})$', response_body)
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
-            print(f"Successfully uploaded: {file_info['full_path']}")
-            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": response_body}
+            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}")
+            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": stdout.decode('utf-8').strip()}
         else:
-            print(f"Failed to upload: {file_info['full_path']}")
+            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}")
             return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": stderr.decode('utf-8').strip()}
             
     except Exception as e:
-        print(f"An error occurred while uploading: {file_info['full_path']}")
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}")
         return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e)}
 
 if __name__ == '__main__':
