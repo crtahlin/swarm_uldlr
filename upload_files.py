@@ -21,6 +21,19 @@ def save_filelist(filelist, filelist_path):
     with tempfile.NamedTemporaryFile('w', dir=os.path.dirname(filelist_path), delete=False) as tempf:
         json.dump(filelist, tempf, indent=4)
     shutil.move(tempf.name, filelist_path)
+    
+    
+# Function to calculate duration and average speed
+def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes):
+    try:
+        start_time = datetime.strptime(timestamp_start, "%Y-%m-%d %H:%M:%S")
+        end_time = datetime.strptime(timestamp_end, "%Y-%m-%d %H:%M:%S")
+        duration = (end_time - start_time).total_seconds()
+        file_size_MB = file_size_bytes / (1024 * 1024)
+        avg_speed = file_size_MB / duration if duration > 0 else 0
+        return round(file_size_MB, 2), round(avg_speed, 2)
+    except Exception as e:
+        return None, None
 
 def upload_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -43,21 +56,22 @@ def upload_file(file_info, settings):
         stdout, stderr = process.communicate()
         
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size']) 
         
         if process.returncode == 0:
             response_body = stdout.decode('utf-8').strip()
             swarm_hash = re.search(r'([a-fA-F0-9]{64})$', response_body)
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
-            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}")
+            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s")
             return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": stdout.decode('utf-8').strip()}
         else:
-            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}")
+            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
             return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": stderr.decode('utf-8').strip()}
             
     except Exception as e:
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}")
+        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
         return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e)}
 
 if __name__ == '__main__':
