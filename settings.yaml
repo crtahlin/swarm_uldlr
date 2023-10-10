@@ -28,10 +28,10 @@ download_location_path: "./downloads"
 page_title: "My Swarm Files"
 
 # Page footer to include (optional)
-page_footer: "path/to/footer.txt"
+page_footer: "footer.txt"
 
 # Page styles to include (optional)
-page_css_styles: "path/to/styles.css"
+page_css_styles: "styles.css"
 
 # Swarm gateway to use (full URL, reference hash concatenated)
-swarm_gateway: "https://some.swarm.gateway/"
+swarm_gateway: "https://gateway.fairdatasociety.org/bzz/"
