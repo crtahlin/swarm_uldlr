@@ -46,7 +46,7 @@ def generate_html(settings, file_list):
     
     if settings.get('page_footer'):
         footer_content = load_text_from_file(settings['page_footer'])
-        html.append(f"<div>{footer_content}</div>")
+        html.append(f"<br><div>{footer_content}</div>")
     
     html.append(f"</body>")
     html.append(f"</html>")
