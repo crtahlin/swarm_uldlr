@@ -1,0 +1,18 @@
+body {
+  background-color: #f0f8ff; /* Light blue background */
+  font-family: "Courier New", monospace; /* Computer terminal font */
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  font-weight: bold;
+}
