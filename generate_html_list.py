@@ -19,6 +19,10 @@ def generate_html(settings, file_list):
     html.append(f"<html>")
     html.append(f"<head>")
     html.append(f"<title>{settings['page_title']}</title>")
+    html.append(f"</head>")
+    html.append(f"<body>")
+    html.append(f"<h1>{settings['page_title']}</h1>")  # Add this line for the title at the top of the page
+    html.append(f"<table>")
     
     if settings.get('page_css_styles'):
         css_content = load_text_from_file(settings['page_css_styles'])
