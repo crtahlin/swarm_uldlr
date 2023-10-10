@@ -57,7 +57,11 @@ if __name__ == '__main__':
     settings = load_settings('settings.yaml')
     file_list = load_filelist(settings['file_info_path'])
     html_content = generate_html(settings, file_list)
+
+    # Replace spaces in page_title with underscores and append .html
+    output_file_name = f"{settings['page_title'].replace(' ', '_')}.html"
     
-    with open('generated_page.html', 'w') as f:
+    with open(output_file_name, 'w') as f:
         f.write(html_content)
+
 
