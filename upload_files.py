@@ -23,6 +23,7 @@ def save_filelist(filelist, filelist_path):
     shutil.move(tempf.name, filelist_path)
 
 def upload_file(file_info, settings):
+    timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cmd = ['swarm-cli', 'upload', file_info['full_path'], '--quiet']
     
     if settings.get('bee_api_endpoint'):
@@ -41,7 +42,7 @@ def upload_file(file_info, settings):
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
         
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         if process.returncode == 0:
             response_body = stdout.decode('utf-8').strip()
@@ -49,14 +50,15 @@ def upload_file(file_info, settings):
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
             print(f"Successfully uploaded: {file_info['full_path']}")
-            return {"timestamp": timestamp, "response_body": response_body}
+            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": response_body}
         else:
             print(f"Failed to upload: {file_info['full_path']}")
-            return {"timestamp": timestamp, "error": stderr.decode('utf-8').strip()}
+            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": stderr.decode('utf-8').strip()}
             
     except Exception as e:
         print(f"An error occurred while uploading: {file_info['full_path']}")
-        return {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "error": str(e)}
+        timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e)}
 
 if __name__ == '__main__':
     try:
