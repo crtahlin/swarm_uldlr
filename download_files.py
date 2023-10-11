@@ -27,7 +27,7 @@ def save_filelist(filelist, filelist_path):
         json.dump(filelist, f, indent=4)
 
 def download_file(file_info, settings):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     print(f"Working on file: {file_info['filename']}")
 
@@ -35,7 +35,8 @@ def download_file(file_info, settings):
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
-        response_body = stdout.decode('utf-8').strip()
+        
+        timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         download_path = os.path.join(settings['download_location_path'], file_info['filename'])
         calculated_hash = calculate_sha256(download_path)
@@ -43,15 +44,18 @@ def download_file(file_info, settings):
         sha256_comparison = "Failed" if calculated_hash != file_info['sha256'] else "Successful"
         
         return {
-            "timestamp": timestamp,
+            "timestamp_start": timestamp_start,
+            "timestamp_end": timestamp_end,
             "sha256_comparison": sha256_comparison,
-            "response_body": response_body,
+            "response_body": stdout.decode('utf-8').strip(),
             "error": stderr.decode('utf-8').strip() if process.returncode != 0 else None
         }
         
     except Exception as e:
+        timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return {
-            "timestamp": timestamp,
+            "timestamp_start": timestamp_start,
+            "timestamp_end": timestamp_end,
             "sha256_comparison": "Failed",
             "error": str(e)
         }
