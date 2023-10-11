@@ -76,6 +76,10 @@ if __name__ == '__main__':
     sha256_failed_count = 0
 
     for file_info in file_list:
+        if 'swarmHash' not in file_info:
+            print(f"Skipping {file_info['filename']} as it does not have a Swarm hash.")
+            continue
+        
         download_attempt = download_file(file_info, settings)
 
         file_info.setdefault('download_attempts', []).append(download_attempt)
