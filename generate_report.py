@@ -19,8 +19,8 @@ def generate_csv_report(file_list, output_path):
         writer.writeheader()
         
         for file_info in file_list:
-            successful_uploads = [attempt['timestamp_end'] for attempt in file_info.get('upload_attempts', []) if 'error' not in attempt]
-            successful_downloads = [attempt['timestamp_end'] for attempt in file_info.get('download_attempts', []) if attempt.get('sha256_comparison') == 'Successful']
+            successful_uploads = [attempt.get('timestamp_end', '') for attempt in file_info.get('upload_attempts', []) if 'error' not in attempt]
+            successful_downloads = [attempt.get('timestamp_end', '') for attempt in file_info.get('download_attempts', []) if attempt.get('sha256_comparison') == 'Successful']
 
             writer.writerow({
                 'filename': file_info.get('filename', ''),
