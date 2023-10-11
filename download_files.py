@@ -4,7 +4,7 @@ import json
 import yaml
 import argparse
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 
 def load_settings(settings_path):
@@ -25,11 +25,24 @@ def calculate_sha256(file_path):
 def save_filelist(filelist, filelist_path):
     with open(filelist_path, 'w') as f:
         json.dump(filelist, f, indent=4)
+        
+def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes):
+    FMT = '%Y-%m-%d %H:%M:%S'
+    tdelta = datetime.strptime(timestamp_end, FMT) - datetime.strptime(timestamp_start, FMT)
+    duration_seconds = tdelta.total_seconds()
+    file_size_MB = file_size_bytes / (1024 * 1024)
+    if duration_seconds > 0:
+        avg_speed = file_size_MB / duration_seconds
+    else:
+        avg_speed = 0  # Avoid division by zero
+    return file_size_MB, avg_speed
+
 
 def download_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    file_size_MB = file_info['size'] / (1024 * 1024)
     
-    print(f"Working on file: {file_info['filename']}")
+    print(f"Working on file: {file_info['filename']}  start: {timestamp_start}  file size: {file_size_MB:.2f} MB")
 
     cmd = ['swarm-cli', 'download', file_info['swarmHash'], settings['download_location_path'], '--quiet', '--curl']
     try:
@@ -79,20 +92,20 @@ if __name__ == '__main__':
         if 'swarmHash' not in file_info:
             print(f"Skipping {file_info['filename']} as it does not have a Swarm hash.")
             continue
-        
-        download_attempt = download_file(file_info, settings)
 
-        file_info.setdefault('download_attempts', []).append(download_attempt)
-        
-        if download_attempt['error']:
-            print(f"Download failed for: {file_info['filename']}")
+        download_attempt = download_file(file_info, settings)
+        timestamp_start = download_attempt.get('timestamp_start', '')
+        timestamp_end = download_attempt.get('timestamp_end', '')
+
+        # Calculate file size in MB and average speed in MB/s
+        file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size'])
+
+        if download_attempt.get('error'):
+            print(f"Download failed for: {file_info['filename']}  Error: {download_attempt['error']}")
             unsuccessful_count += 1
-            
         else:
+            print(f"Successfully downloaded: {file_info['filename']}  end: {timestamp_end}  average speed: {avg_speed:.2f} MB/s")
             successful_count += 1
-            if download_attempt['sha256_comparison'] == "Failed":
-                print(f"SHA-256 comparison failed for: {file_info['filename']}")
-                sha256_failed_count += 1
 
         save_filelist(file_list, settings['file_info_path'])
 
