@@ -96,6 +96,9 @@ if __name__ == '__main__':
         download_attempt = download_file(file_info, settings)
         timestamp_start = download_attempt.get('timestamp_start', '')
         timestamp_end = download_attempt.get('timestamp_end', '')
+        
+        # Record this download attempt in the file_info dictionary
+        file_info.setdefault('download_attempts', []).append(download_attempt)  # Add this line
 
         # Calculate file size in MB and average speed in MB/s
         file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size'])
