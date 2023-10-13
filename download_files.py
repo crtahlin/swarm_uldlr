@@ -88,33 +88,42 @@ if __name__ == '__main__':
     unsuccessful_count = 0
     sha256_failed_count = 0
 
-    for file_info in file_list:
-        if 'swarmHash' not in file_info:
-            print(f"Skipping {file_info['filename']} as it does not have a Swarm hash.")
-            continue
+try:
+        for file_info in file_list:
+            if 'swarmHash' not in file_info:
+                print(f"Skipping {file_info['filename']} as it does not have a Swarm hash.")
+                continue
 
-        download_attempt = download_file(file_info, settings)
-        timestamp_start = download_attempt.get('timestamp_start', '')
-        timestamp_end = download_attempt.get('timestamp_end', '')
+            download_attempt = download_file(file_info, settings)
+            timestamp_start = download_attempt.get('timestamp_start', '')
+            timestamp_end = download_attempt.get('timestamp_end', '')
         
-        # Record this download attempt in the file_info dictionary
-        file_info.setdefault('download_attempts', []).append(download_attempt)  # Add this line
+            # Record this download attempt in the file_info dictionary
+            file_info.setdefault('download_attempts', []).append(download_attempt)  # Add this line
 
-        # Calculate file size in MB and average speed in MB/s
-        file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size'])
+            # Calculate file size in MB and average speed in MB/s
+            file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size'])
 
-        if download_attempt.get('error'):
-            print(f"Download failed for: {file_info['filename']}  Error: {download_attempt['error']}")
-            unsuccessful_count += 1
-        else:
-            print(f"Successfully downloaded: {file_info['filename']}  end: {timestamp_end}  average speed: {avg_speed:.2f} MB/s")
-            successful_count += 1
+            if download_attempt.get('error'):
+                print(f"Download failed for: {file_info['filename']}  Error: {download_attempt['error']}")
+                unsuccessful_count += 1
+            else:
+                print(f"Successfully downloaded: {file_info['filename']}  end: {timestamp_end}  average speed: {avg_speed:.2f} MB/s")
+                successful_count += 1
 
-        save_filelist(file_list, settings['file_info_path'])
+            save_filelist(file_list, settings['file_info_path'])
 
-    print(f"\nDownload Summary:")
+        print(f"\nDownload Summary:")
+        print(f"Successfully downloaded: {successful_count} files")
+        print(f"Failed to download: {unsuccessful_count} files")
+        print(f"SHA-256 comparison failed: {sha256_failed_count} files")
+
+except KeyboardInterrupt:
+    print("\nCTRL-C detected. Attempting to save JSON file before exiting.")
+    save_filelist(file_list, settings['file_info_path'])
+    print(f"Download Summary:")
     print(f"Successfully downloaded: {successful_count} files")
     print(f"Failed to download: {unsuccessful_count} files")
     print(f"SHA-256 comparison failed: {sha256_failed_count} files")
-
+    print("JSON file saved. Exiting now.")
 
