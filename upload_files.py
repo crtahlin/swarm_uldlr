@@ -9,6 +9,9 @@ import re
 import tempfile
 import shutil
 
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
+
 def load_settings(settings_path):
     with open(settings_path, 'r') as f:
         return yaml.safe_load(f)
@@ -73,13 +76,40 @@ def upload_file(file_info, settings):
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
         return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e)}
+        
+def upload_files_concurrently(file_list, settings):
+    successful_count = 0
+    unsuccessful_count = 0
+    total_data_uploaded = 0  # In bytes
+    
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(upload_file, file_info, settings): file_info for file_info in file_list}
+        
+        for future in concurrent.futures.as_completed(futures):
+            file_info = futures[future]
+            try:
+                upload_attempt = future.result()
+            except Exception as e:
+                print(f"An exception occurred: {e}")
+            else:
+                if "error" not in upload_attempt:
+                    successful_count += 1
+                    total_data_uploaded += file_info['size']
+                    file_info.setdefault('upload_attempts', []).append(upload_attempt)
+                else:
+                    unsuccessful_count += 1
+                    file_info.setdefault('upload_attempts', []).append(upload_attempt)
+                
+                save_filelist(file_list, settings['file_info_path'])
+    
+    total_data_uploaded_MB = total_data_uploaded / (1024 * 1024)
+    print(f"\nSuccessfully uploaded {successful_count} files.")
+    print(f"Failed to upload {unsuccessful_count} files.")
+    print(f"Total data uploaded: {total_data_uploaded_MB:.2f} MBytes")        
+        
 
 if __name__ == '__main__':
     try:
-        successful_count = 0
-        unsuccessful_count = 0
-        total_data_uploaded = 0  # In bytes
-        
         parser = argparse.ArgumentParser(description='Upload files.')
         parser.add_argument('-S', '--settings', help='Path to settings YAML file', default='settings.yaml')
         args = parser.parse_args()
@@ -88,36 +118,18 @@ if __name__ == '__main__':
         file_list = load_filelist(settings['file_info_path'])
     
         upload_filter = settings.get('upload_filter', 'all')  # Default to 'all' if not specified
-        
-        # This would get the max_file_size setting from the YAML file
+    
         max_file_size = settings.get('max_file_size', float('inf'))  # Use a large number as the default
     
-        for file_info in file_list:
-            # Skip this file if we are uploading only 'pending' files and this file has a swarmHash
-            if upload_filter == 'pending' and 'swarmHash' in file_info:
-                continue
-            if file_info['size'] > max_file_size:
-                print(f"Skipping {file_info['filename']} due to size exceeding max_file_size.")
-                continue
+        filtered_file_list = [file_info for file_info in file_list if 
+                               (upload_filter != 'pending' or 'swarmHash' not in file_info) and 
+                               file_info['size'] <= max_file_size]
         
-            upload_attempt = upload_file(file_info, settings)
+        upload_files_concurrently(filtered_file_list, settings)
         
-            if "error" not in upload_attempt:
-                successful_count += 1
-                total_data_uploaded += file_info['size']
-                file_info.setdefault('upload_attempts', []).append(upload_attempt)  # Set default for 'upload_attempts' if not exists
-            else:
-                unsuccessful_count += 1
-                file_info.setdefault('upload_attempts', []).append(upload_attempt)  # Set default for 'upload_attempts' if not exists
-            
-            save_filelist(file_list, settings['file_info_path'])
-    
-        total_data_uploaded_MB = total_data_uploaded / (1024 * 1024)
-        print(f"\nSuccessfully uploaded {successful_count} files.")
-        print(f"Failed to upload {unsuccessful_count} files.")
-        print(f"Total data uploaded: {total_data_uploaded_MB:.2f} MBytes")
     except KeyboardInterrupt:
         print("CTRL-C detected. Attempting to save JSON file before exiting.")
         save_filelist(file_list, settings['file_info_path'])
         print("JSON file saved. Exiting now.")
+
 
