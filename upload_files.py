@@ -82,7 +82,7 @@ def upload_files_concurrently(file_list, settings):
     unsuccessful_count = 0
     total_data_uploaded = 0  # In bytes
     
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         futures = {executor.submit(upload_file, file_info, settings): file_info for file_info in file_list}
         
         for future in concurrent.futures.as_completed(futures):
