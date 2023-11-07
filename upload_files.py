@@ -8,6 +8,9 @@ from datetime import datetime
 import re
 import tempfile
 import shutil
+import resource  # For current process resource usage
+import psutil  # For any process resource usage (you need to install this module separately)
+
 
 def load_settings(settings_path):
     with open(settings_path, 'r') as f:
@@ -49,11 +52,23 @@ def upload_file(file_info, settings):
         '--yes'
     ])
     
-    print(f"Working on file: {file_info['full_path']}  start: {timestamp_start}")
+    print(f"Working on file: {file_info['full_path']}  start: {timestamp_start} Size: {file_size_MB} MB")
 
     try:
+        # Start the subprocess and get its PID
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        pid = process.pid
+
+        # Create a psutil Process object to monitor the subprocess
+        p = psutil.Process(pid)
+
+        # Wait for the process to complete
         stdout, stderr = process.communicate()
+
+        # Get memory and CPU usage of the subprocess
+        used_memory = p.memory_info().rss  # This is in bytes
+        used_cpu_time = p.cpu_times()
+
         
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size']) 
@@ -63,16 +78,28 @@ def upload_file(file_info, settings):
             swarm_hash = re.search(r'([a-fA-F0-9]{64})$', response_body)
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
-            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s")
-            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": stdout.decode('utf-8').strip()}
+            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s Used memory: {used_memory} User CPU: {used_user_cpu}")
+            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": stdout.decode('utf-8').strip(),
+            "used_memory": used_memory,
+            "used_user_cpu": used_cpu_time.user,
+            "used_system_cpu": used_cpu_time.system}
         else:
-            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
-            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": stderr.decode('utf-8').strip()}
+            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {used_memory} User CPU: {used_user_cpu}")
+            return {"timestamp_start": timestamp_start,
+                "timestamp_end": timestamp_end,
+                "error": stderr.decode('utf-8').strip(),
+                "used_memory": used_memory,
+                "used_user_cpu": used_cpu_time.user,
+                "used_system_cpu": used_cpu_time.system}
             
     except Exception as e:
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
-        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e)}
+        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {used_memory} User CPU: {used_user_cpu}")
+        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, ,
+            "used_memory": used_memory,
+            "used_user_cpu": used_cpu_time.user,
+            "used_system_cpu": used_cpu_time.system,
+            "error": str(e)}
 
 if __name__ == '__main__':
     try:
