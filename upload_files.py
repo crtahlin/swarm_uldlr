@@ -41,6 +41,7 @@ def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes
 
 def upload_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    file_size_MB = file_info['size'] / (1024 * 1024)  # Define this outside of try-except
     cmd = ['swarm-cli', 'upload', file_info['full_path'], '--quiet']
     
     if settings.get('bee_api_endpoint'):
