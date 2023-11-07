@@ -51,12 +51,6 @@ def upload_file(file_info, settings):
     if settings.get('bee_api_endpoint'):
         cmd.extend(['--bee-api-url', settings['bee_api_endpoint']])
         
-    cmd.extend([
-        '--stamp', settings['stamp_id'],
-        '--deferred', str(settings['deferred_upload']).lower(),
-        '--curl',
-        '--yes'
-    ])
     
     print(f"Working on file: {file_info['full_path']}  start: {timestamp_start}")
 
