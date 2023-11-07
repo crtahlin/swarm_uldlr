@@ -8,6 +8,10 @@ from datetime import datetime
 import re
 import tempfile
 import shutil
+import resource  # For current process resource usage
+import psutil  # For any process resource usage (you need to install this module separately)
+import time
+
 
 def load_settings(settings_path):
     with open(settings_path, 'r') as f:
@@ -37,15 +41,11 @@ def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes
 
 def upload_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     cmd = [
         '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory,%P CPU"', # Formatting for time output
         'swarm-cli', 'upload', file_info['full_path'],
         '--quiet',
-        '--stamp', settings['stamp_id'],
-        '--deferred', str(settings['deferred_upload']).lower(),
-        '--curl',
-        '--yes'
-    ]
 
     
     if settings.get('bee_api_endpoint'):
@@ -56,7 +56,9 @@ def upload_file(file_info, settings):
     swarm_output = None  # Define swarm_output here to have the correct scope
 
     try:
+        # Start the subprocess and get its PID
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         output, errors = process.communicate()
 
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -70,6 +72,7 @@ def upload_file(file_info, settings):
             swarm_hash = re.search(r'([a-fA-F0-9]{64})$', swarm_output)
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
+ 
             print(
                 f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s")
             print(f"Time metrics: {time_output}")
@@ -88,6 +91,7 @@ def upload_file(file_info, settings):
         print(f"Time metrics: {time_output if 'time_output' in locals() else 'Unknown'}")
         return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e),
                 "time_metrics": time_output if 'time_output' in locals() else 'Unknown'}
+
 
 
 if __name__ == '__main__':
