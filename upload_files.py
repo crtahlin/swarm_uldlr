@@ -95,7 +95,7 @@ def upload_file(file_info, settings):
     except Exception as e:
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {used_memory} User CPU: {used_user_cpu}")
-        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, ,
+        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end,
             "used_memory": used_memory,
             "used_user_cpu": used_cpu_time.user,
             "used_system_cpu": used_cpu_time.system,
