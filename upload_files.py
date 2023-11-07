@@ -41,94 +41,58 @@ def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes
 
 def upload_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    file_size_MB = file_info['size'] / (1024 * 1024)  # Define this outside of try-except
-    cmd = ['swarm-cli', 'upload', file_info['full_path'], '--quiet']
+
+    cmd = [
+        '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory,%P CPU"', # Formatting for time output
+        'swarm-cli', 'upload', file_info['full_path'],
+        '--quiet',
+
     
     if settings.get('bee_api_endpoint'):
         cmd.extend(['--bee-api-url', settings['bee_api_endpoint']])
         
-    cmd.extend([
-        '--stamp', settings['stamp_id'],
-        '--deferred', str(settings['deferred_upload']).lower(),
-        '--curl',
-        '--yes'
-    ])
     
     print(f"Working on file: {file_info['full_path']}  start: {timestamp_start}")
+    swarm_output = None  # Define swarm_output here to have the correct scope
 
     try:
         # Start the subprocess and get its PID
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        pid = process.pid
 
-        # Create a psutil Process object to monitor the subprocess
-        p = psutil.Process(pid)
+        output, errors = process.communicate()
 
-        # Initialize memory and CPU usage variables
-        max_memory_usage = 0
-        total_user_cpu_time = 0
-        total_system_cpu_time = 0
-
-        # Poll the process to get CPU and memory usage periodically
-        while True:
-            if p.is_running() and not p.status() == psutil.STATUS_ZOMBIE:
-                try:
-                    with p.oneshot():
-                        # Get the memory usage
-                        memory_info = p.memory_info()
-                        max_memory_usage = max(max_memory_usage, memory_info.rss)
-
-                        # Get the CPU usage
-                        cpu_times = p.cpu_times()
-                        total_user_cpu_time += cpu_times.user
-                        total_system_cpu_time += cpu_times.system
-                except psutil.NoSuchProcess:
-                    break  # The process has finished and exited the loop
-                time.sleep(0.1)  # Sleep for a short time before next poll
-            else:
-                break  # The process has finished and exited the loop
-
-
-
-
-        # Wait for the process to complete
-        stdout, stderr = process.communicate()
-
-        # Get memory and CPU usage of the subprocess
-        used_memory = p.memory_info().rss  # This is in bytes
-        used_cpu_time = p.cpu_times()
-
-        
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size']) 
-        
+        file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size'])
+
+        # Parse the time command output from errors (since it's redirected to stderr)
+        time_output = errors.decode('utf-8').strip()
+
         if process.returncode == 0:
-            response_body = stdout.decode('utf-8').strip()
-            swarm_hash = re.search(r'([a-fA-F0-9]{64})$', response_body)
+            swarm_output = output.decode('utf-8').strip()
+            swarm_hash = re.search(r'([a-fA-F0-9]{64})$', swarm_output)
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
-            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s Used memory: {max_memory_usage} User CPU: {total_user_cpu_time}")
-            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": stdout.decode('utf-8').strip(),
-            "max_memory_usage": max_memory_usage,
-            "total_user_cpu_time": total_user_cpu_time,
-            "total_system_cpu_time": total_system_cpu_time}
+ 
+            print(
+                f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s")
+            print(f"Time metrics: {time_output}")
+            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "time_metrics": time_output,
+                    "response_body": swarm_output}
         else:
-            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {max_memory_usage} User CPU: {total_user_cpu_time}")
-            return {"timestamp_start": timestamp_start,
-                "timestamp_end": timestamp_end,
-                "error": stderr.decode('utf-8').strip(),
-                "max_memory_usage": max_memory_usage,
-                "total_user_cpu_time": total_user_cpu_time,
-                "total_system_cpu_time": total_system_cpu_time}
-            
+            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
+            print(f"Time metrics: {time_output}")
+            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "time_metrics": time_output,
+                    "error": output.decode('utf-8').strip()}
+
     except Exception as e:
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {max_memory_usage} User CPU: {total_user_cpu_time}")
-        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end,
-            "max_memory_usage": None,
-            "total_user_cpu_time": None,
-            "total_system_cpu_time": None,
-            "error": str(e)}
+        print(
+            f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB if 'file_size_MB' in locals() else 'Unknown'} MB")
+        print(f"Time metrics: {time_output if 'time_output' in locals() else 'Unknown'}")
+        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e),
+                "time_metrics": time_output if 'time_output' in locals() else 'Unknown'}
+
+
 
 if __name__ == '__main__':
     try:

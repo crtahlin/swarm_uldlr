@@ -27,7 +27,7 @@ def calculate_speed_MBps(timestamp_start, timestamp_end, file_size_bytes):
 
 def generate_csv_report(file_list, output_path):
     with open(output_path, 'w', newline='') as csvfile:
-        fieldnames = ['filename', 'size in bytes', 'swarmHash', 'first uploaded', 'last uploaded', 
+        fieldnames = ['filename', 'size', 'swarmHash', 'first uploaded', 'last uploaded', 
                       'last successful download', 'number of times successfully downloaded', 
                       'last successful download speed (MB/s)', 'last successful upload speed (MB/s)']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -54,7 +54,7 @@ def generate_csv_report(file_list, output_path):
 
             writer.writerow({
                 'filename': file_info.get('filename', ''),
-                'size in bytes': file_info.get('size', ''),
+                'size': file_info.get('size', ''),
                 'swarmHash': file_info.get('swarmHash', ''),
                 'first uploaded': min([x.get('timestamp_end', '') for x in successful_uploads], default=''),
                 'last uploaded': max([x.get('timestamp_end', '') for x in successful_uploads], default=''),
