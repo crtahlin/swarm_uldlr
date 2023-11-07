@@ -53,6 +53,7 @@ def upload_file(file_info, settings):
         
     
     print(f"Working on file: {file_info['full_path']}  start: {timestamp_start}")
+    swarm_output = None  # Define swarm_output here to have the correct scope
 
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -78,13 +79,15 @@ def upload_file(file_info, settings):
             print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
             print(f"Time metrics: {time_output}")
             return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "time_metrics": time_output,
-                    "error": swarm_output}
+                    "error": output.decode('utf-8').strip()}
 
     except Exception as e:
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(
             f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB if 'file_size_MB' in locals() else 'Unknown'} MB")
-        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e)}
+        print(f"Time metrics: {time_output if 'time_output' in locals() else 'Unknown'}")
+        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e),
+                "time_metrics": time_output if 'time_output' in locals() else 'Unknown'}
 
 
 if __name__ == '__main__':
