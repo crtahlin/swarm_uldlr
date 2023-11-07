@@ -106,13 +106,13 @@ def upload_file(file_info, settings):
             swarm_hash = re.search(r'([a-fA-F0-9]{64})$', response_body)
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
-            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s Used memory: {used_memory} User CPU: {used_user_cpu}")
+            print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s Used memory: {max_memory_usage} User CPU: {total_user_cpu_time}")
             return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": stdout.decode('utf-8').strip(),
             "max_memory_usage": max_memory_usage,
             "total_user_cpu_time": total_user_cpu_time,
             "total_system_cpu_time": total_system_cpu_time}
         else:
-            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {used_memory} User CPU: {used_user_cpu}")
+            print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {max_memory_usage} User CPU: {total_user_cpu_time}")
             return {"timestamp_start": timestamp_start,
                 "timestamp_end": timestamp_end,
                 "error": stderr.decode('utf-8').strip(),
@@ -122,7 +122,7 @@ def upload_file(file_info, settings):
             
     except Exception as e:
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {used_memory} User CPU: {used_user_cpu}")
+        print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB Used memory: {max_memory_usage} User CPU: {total_user_cpu_time}")
         return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end,
             "max_memory_usage": None,
             "total_user_cpu_time": None,
