@@ -37,7 +37,16 @@ def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes
 
 def upload_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cmd = ['swarm-cli', 'upload', file_info['full_path'], '--quiet']
+    cmd = [
+        '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory"', # Formatting for time output
+        'swarm-cli', 'upload', file_info['full_path'],
+        '--quiet',
+        '--stamp', settings['stamp_id'],
+        '--deferred', str(settings['deferred_upload']).lower(),
+        '--curl',
+        '--yes'
+    ]
+
     
     if settings.get('bee_api_endpoint'):
         cmd.extend(['--bee-api-url', settings['bee_api_endpoint']])
@@ -53,26 +62,39 @@ def upload_file(file_info, settings):
 
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
-        
+        output, _ = process.communicate()
+
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         file_size_MB, avg_speed = calculate_duration_and_speed(timestamp_start, timestamp_end, file_info['size']) 
-        
+
+        # Process the output
+        time_output, swarm_output = output.decode('utf-8').rsplit('\n', 1) # Assuming the last line is time output
+        print(f"Time metrics: {time_output}")
+        print(f"Swarm output: {swarm_output.strip()}")
+
         if process.returncode == 0:
             response_body = stdout.decode('utf-8').strip()
             swarm_hash = re.search(r'([a-fA-F0-9]{64})$', response_body)
             if swarm_hash:
                 file_info['swarmHash'] = swarm_hash.group(1)
             print(f"Successfully uploaded: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB  Average speed: {avg_speed} MB/s")
-            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "response_body": stdout.decode('utf-8').strip()}
+            return {"timestamp_start": timestamp_start,
+                    "timestamp_end": timestamp_end,
+                    "time_metrics": time_output.strip(),
+                    "response_body": stdout.decode('utf-8').strip()}
         else:
             print(f"Failed to upload: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
-            return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": stderr.decode('utf-8').strip()}
+            return {"timestamp_start": timestamp_start,
+                    "timestamp_end": timestamp_end,
+                    "time_metrics": time_output.strip(),
+                    "error": stderr.decode('utf-8').strip()}
             
     except Exception as e:
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"An error occurred while uploading: {file_info['full_path']}  end: {timestamp_end}  Size: {file_size_MB} MB")
-        return {"timestamp_start": timestamp_start, "timestamp_end": timestamp_end, "error": str(e)}
+        return {"timestamp_start": timestamp_start,
+                "timestamp_end": timestamp_end,
+                "error": str(e)}
 
 if __name__ == '__main__':
     try:
