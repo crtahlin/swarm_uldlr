@@ -52,7 +52,7 @@ def upload_file(file_info, settings):
         '--yes'
     ])
     
-    print(f"Working on file: {file_info['full_path']}  start: {timestamp_start} Size: {file_size_MB} MB")
+    print(f"Working on file: {file_info['full_path']}  start: {timestamp_start})
 
     try:
         # Start the subprocess and get its PID
