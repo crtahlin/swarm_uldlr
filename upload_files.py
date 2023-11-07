@@ -38,7 +38,7 @@ def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes
 def upload_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cmd = [
-        '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory"', # Formatting for time output
+        '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory,%P CPU"', # Formatting for time output
         'swarm-cli', 'upload', file_info['full_path'],
         '--quiet',
         '--stamp', settings['stamp_id'],
