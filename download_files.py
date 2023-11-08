@@ -41,7 +41,10 @@ def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes
 def download_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     file_size_MB = file_info['size'] / (1024 * 1024)
-    
+
+    download_directory = settings['download_location_path']
+    os.makedirs(download_directory, exist_ok=True)  # This will create the directory if it does not exist
+
     print(f"Working on file: {file_info['filename']}  start: {timestamp_start}  file size: {file_size_MB:.2f} MB")
 
     # Modified command to include the 'time' utility
