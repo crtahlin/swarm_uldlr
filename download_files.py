@@ -44,7 +44,12 @@ def download_file(file_info, settings):
     
     print(f"Working on file: {file_info['filename']}  start: {timestamp_start}  file size: {file_size_MB:.2f} MB")
 
-    cmd = ['swarm-cli', 'download', file_info['swarmHash'], settings['download_location_path'], '--quiet', '--curl']
+    # Modified command to include the 'time' utility
+    cmd = [
+        '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory,%P CPU"', # Formatting for time output
+        'swarm-cli', 'download', file_info['swarmHash'], '--output', os.path.join(settings['download_location_path'], file_info['filename']),
+        '--quiet', '--curl'
+
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
@@ -55,11 +60,17 @@ def download_file(file_info, settings):
         calculated_hash = calculate_sha256(download_path)
         
         sha256_comparison = "Failed" if calculated_hash != file_info['sha256'] else "Successful"
-        
+
+        # Assuming the last line in stderr is the time utility output
+        time_output = stderr.decode('utf-8').strip().split('\n')[-1]
+
+        print(f"Time metrics: {time_output}")  # Print the time metrics
+
         return {
             "timestamp_start": timestamp_start,
             "timestamp_end": timestamp_end,
             "sha256_comparison": sha256_comparison,
+            "time_metrics": time_output,  # Save the time metrics
             "response_body": stdout.decode('utf-8').strip(),
             "error": stderr.decode('utf-8').strip() if process.returncode != 0 else None
         }
