@@ -6,6 +6,8 @@ import argparse
 import subprocess
 from datetime import datetime, timedelta
 import hashlib
+import psutil
+import time
 
 def load_settings(settings_path):
     with open(settings_path, 'r') as f:
@@ -37,6 +39,17 @@ def calculate_duration_and_speed(timestamp_start, timestamp_end, file_size_bytes
         avg_speed = 0  # Avoid division by zero
     return file_size_MB, avg_speed
 
+def print_bee_processes_info():
+    # Find all "bee" processes
+    bee_processes = [p for p in psutil.process_iter(['pid', 'name', 'memory_info', 'cpu_percent']) if 'bee' in p.info['name']]
+    for proc in bee_processes:
+        try:
+            print(f"Bee Process PID: {proc.info['pid']} | Memory: {proc.info['memory_info'].rss / 1024 ** 2:.2f} MB | CPU: {proc.info['cpu_percent']}%")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass  # Process has been terminated or cannot access information
+
+
+
 
 def download_file(file_info, settings):
     timestamp_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -46,6 +59,9 @@ def download_file(file_info, settings):
     os.makedirs(download_directory, exist_ok=True)  # This will create the directory if it does not exist
 
     print(f"Working on file: {file_info['filename']}  start: {timestamp_start}  file size: {file_size_MB:.2f} MB")
+
+    # Print initial info about "bee" processes
+    print_bee_processes_info()
 
     # Modified command to include the 'time' utility
     cmd = [
@@ -57,7 +73,19 @@ def download_file(file_info, settings):
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
-        
+
+        # Loop to wait for the download process to complete while printing "bee" process info
+        while True:
+            # Check if process has finished
+            if process.poll() is not None:
+                break
+
+            # Print CPU and memory info of "bee" processes
+            print_bee_processes_info()
+
+            # Wait for a short period before checking again
+            time.sleep(5)
+
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         download_path = os.path.join(settings['download_location_path'], file_info['filename'])
