@@ -50,7 +50,7 @@ def download_file(file_info, settings):
     # Modified command to include the 'time' utility
     cmd = [
         '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory,%P CPU"', # Formatting for time output
-        'swarm-cli', 'download', file_info['swarmHash'], '--output', os.path.join(settings['download_location_path'], file_info['filename']),
+        'swarm-cli', 'download', file_info['swarmHash'], settings['download_location_path'],
         '--quiet', '--curl'
     ]
 
