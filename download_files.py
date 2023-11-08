@@ -49,6 +49,7 @@ def download_file(file_info, settings):
         '/usr/bin/time', '-f', '"%e real,%U user,%S sys,%M KB max memory,%P CPU"', # Formatting for time output
         'swarm-cli', 'download', file_info['swarmHash'], '--output', os.path.join(settings['download_location_path'], file_info['filename']),
         '--quiet', '--curl'
+    ]
 
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
