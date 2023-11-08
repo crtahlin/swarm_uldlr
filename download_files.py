@@ -72,7 +72,9 @@ def download_file(file_info, settings):
 
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
+
+        # Print initial info about "bee" processes
+        print_bee_processes_info()
 
         # Loop to wait for the download process to complete while printing "bee" process info
         while True:
@@ -85,6 +87,8 @@ def download_file(file_info, settings):
 
             # Wait for a short period before checking again
             time.sleep(5)
+
+        stdout, stderr = process.communicate()
 
         timestamp_end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
