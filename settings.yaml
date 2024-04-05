@@ -35,3 +35,6 @@ page_css_styles: "styles.css"
 
 # Swarm gateway to use (full URL, reference hash concatenated)
 swarm_gateway: "https://gateway.fairdatasociety.org/bzz/"
+
+# Explainer text to put before the table of files
+placeholder_text: "Clicking on the links will use a gateway to access the file. Larger files might not be accesible through the gateway. Try using local Bee node by installing Bee desktop via <a href="https://desktop.ethswarm.org">https://desktop.ethswarm.org</a> " 

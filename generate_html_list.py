@@ -24,6 +24,10 @@ def generate_html(settings, file_list):
     html.append(f"<h1>{settings['page_title']}</h1>")  # Add this line for the title at the top of the page
     html.append(f"<table>")
     
+    # Add placeholder text from settings
+    placeholder_text = settings.get('placeholder_text', 'Default placeholder text if not specified in settings')
+    html.append(f"<p>{placeholder_text}</p>")  # Add this line for the placeholder text
+   
     if settings.get('page_css_styles'):
         css_content = load_text_from_file(settings['page_css_styles'])
         html.append(f"<style>{css_content}</style>")
